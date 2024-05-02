@@ -190,7 +190,7 @@ def train_model(model, loader, loss_fn, optimizer,
 
     if plot_title is not None:
         plt.plot(range(len(val_accs)), val_accs,
-                 label='Validation Accurracies', color='blue')
+                 label='Validation Accuracies', color='blue')
         plt.plot(range(len(train_accs)), train_accs,
                  label='Training Accuracies', color='orange')
         plt.xlabel('Epochs')
