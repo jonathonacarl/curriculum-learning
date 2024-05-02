@@ -16,6 +16,18 @@ NON_EQ_TRIANGLE = 1
 
 def shape_label(shape_type):
     """
+    Description:
+        This function converts a shape type string into an integer label for multi-class classification.
+
+    Parameters:
+        shape_type (str): A string representing the shape type (e.g., 'circle', 'square', 'triangle', etc.).
+
+    Returns:
+        int: An integer label corresponding to the shape type.
+
+    Notes:
+        The function uses global constants (ELLIPSE, CIRCLE, RECTANGLE, SQUARE, TRIANGLE, NON_EQ_TRIANGLE)
+        to map the string shape type to an integer label.
     """
     if shape_type == 'circle':
         shape_type = CIRCLE
@@ -34,6 +46,20 @@ def shape_label(shape_type):
 
 
 def generate_eq_triangle(image_size):
+    """
+    Description:
+        This function generates the coordinates of an equilateral triangle within the given image size.
+
+    Parameters:
+        image_size (int): The size of the square image.
+
+    Returns:
+        numpy.ndarray: A 3x2 NumPy array containing the (x, y) coordinates of the three vertices of the equilateral triangle.
+
+    Notes:
+        The function generates a random triangle height within a certain range and calculates the coordinates
+        of the three vertices based on the triangle height and random starting positions.
+    """
 
     triangle_height = np.random.randint(image_size // 4, image_size // 2)
     x1 = np.random.randint(0, image_size - triangle_height)
@@ -47,6 +73,22 @@ def generate_eq_triangle(image_size):
 
 
 def generate_non_eq_triangle(image_size):
+    """
+    Description:
+        This function generates the coordinates of a non-equilateral triangle within the given image size.
+
+    Parameters:
+        image_size (int): The size of the square image.
+
+    Returns:
+        numpy.ndarray: A 3x2 NumPy array containing the (x, y) coordinates of the three vertices of the non-equilateral triangle.
+
+    Notes:
+        The function generates three random side lengths for the triangle, ensures that the side lengths satisfy
+        the triangle inequality, and calculates the coordinates of the three vertices based on the side lengths
+        and random starting positions.
+    """
+
     side_a = np.random.randint(image_size // 4, image_size // 2)
     side_b = np.random.randint(image_size // 4, image_size // 2)
     side_c = np.random.randint(image_size // 4, image_size // 2)
@@ -74,6 +116,25 @@ def generate_non_eq_triangle(image_size):
 
 
 def generate_shape(image_size, complex=False):
+    """
+    Description:
+        This function generates a random shape (square, circle, rectangle, ellipse, equilateral triangle, or non-equilateral triangle)
+        within the given image size.
+
+    Parameters:
+        image_size (int): The size of the square image.
+        complex (bool, optional): If True, more complex shapes (rectangle, ellipse, non-equilateral triangle) are included.
+                                  If False (default), only simple shapes (square, circle, equilateral triangle) are included.
+
+    Returns:
+        tuple: A tuple containing:
+            - numpy.ndarray: A grayscale image (numpy array) containing the generated shape.
+            - str: A string representing the type of the generated shape.
+
+    Notes:
+        The function randomly selects a shape type, generates the shape within the image using appropriate parameters,
+        and returns the image and the shape type.
+    """
 
     # add more complicated shapes for complex dataset
     shape_type = np.random.choice(
@@ -119,7 +180,25 @@ def generate_shape(image_size, complex=False):
 
 
 def generate_shape_dataset(num_examples, image_size, complex=False):
+    """
+    Description:
+        This function generates a dataset of random shapes and their corresponding labels.
 
+    Parameters:
+        num_examples (int): The number of examples (images) to generate.
+        image_size (int): The size of the square images.
+        complex (bool, optional): If True, more complex shapes (rectangle, ellipse, non-equilateral triangle) are included.
+                                  If False (default), only simple shapes (square, circle, equilateral triangle) are included.
+
+    Returns:
+        tuple: A tuple containing:
+            - torch.Tensor: A tensor of shape (num_examples, image_size, image_size) containing the generated images.
+            - torch.Tensor: A tensor of shape (num_examples,) containing the corresponding labels (integers) for the images.
+
+    Notes:
+        The function calls the `generate_shape` function to generate individual images and labels,
+        and collects them into PyTorch tensors.
+    """
     dataset, labels = [], []
     for _ in range(num_examples):
         shape_image, shape_type = generate_shape(image_size, complex=complex)
@@ -131,20 +210,85 @@ def generate_shape_dataset(num_examples, image_size, complex=False):
 
 
 class ShapeDataset(Dataset):
+    """
+    A custom PyTorch Dataset class for shape classification.
+
+    Attributes:
+        data (torch.Tensor): A tensor containing the input data (e.g., images).
+        labels (torch.Tensor): A tensor containing the corresponding labels for the input data.
+        num_classes (int): The number of classes in the classification task.
+        num_samples (int): The number of samples (images) in the dataset.
+
+    Methods:
+        __len__():
+            Returns the number of samples in the dataset.
+
+        __getitem__(index):
+            Returns a sample and its corresponding label from the dataset.
+
+    """
+
     def __init__(self, dataset, labels, num_classes):
+        """
+        Initializes the ShapeDataset object.
+
+        Args:
+            dataset (torch.Tensor): A tensor containing the input data (e.g., images).
+            labels (torch.Tensor): A tensor containing the corresponding labels for the input data.
+            num_classes (int): The number of classes in the classification task.
+        """
         self.data = dataset
         self.labels = labels
         self.num_classes = num_classes
         self.num_samples = dataset.shape[0]
 
     def __len__(self):
+        """
+        Returns the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
         return self.num_samples
 
     def __getitem__(self, index):
+        """
+        Returns a sample and its corresponding label from the dataset.
+
+        Args:
+            index (int): The index of the sample to retrieve.
+
+        Returns:
+            tuple: A tuple containing:
+                - torch.Tensor: The input data (e.g., image) at the specified index.
+                - torch.Tensor: The label corresponding to the input data at the specified index.
+        """
         return self.data[index], self.labels[index]
 
 
 def prepare_data(dataset, labels, batch_size, num_classes, shuffle=False):
+    """
+    Description:
+        This function splits the input dataset and labels into train, validation, and test sets,
+        and creates PyTorch data loaders for each set.
+
+    Parameters:
+        dataset (torch.Tensor): A tensor containing the input data (e.g., images).
+        labels (torch.Tensor): A tensor containing the corresponding labels for the input data.
+        batch_size (int): The batch size for the data loaders.
+        num_classes (int): The number of classes in the classification task.
+        shuffle (bool, optional): If True, the data is shuffled before splitting. Default is False.
+
+    Returns:
+        tuple: A tuple containing:
+            - torch.utils.data.DataLoader: The data loader for the training set.
+            - torch.utils.data.DataLoader: The data loader for the validation set.
+            - torch.utils.data.DataLoader: The data loader for the test set.
+
+    Notes:
+        The function splits the input data into train, validation, and test sets using `train_test_split` from scikit-learn.
+        It then creates PyTorch datasets and data loaders for each set.
+    """
 
     X_train, X_test, y_train, y_test = train_test_split(dataset, labels,
                                                         train_size=0.5, test_size=0.5)
