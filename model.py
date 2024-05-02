@@ -126,8 +126,8 @@ def model_plateau(val_accs, curr_epoch, switch_epoch, patience=20, tol=0.001):
 
 def train_model(model, loader, loss_fn, optimizer,
                 num_epochs=256, verbose=False, tol=0.001,
-                val_loader=None, switch_loader=None, switch_val_loader=None,
-                switch_epoch=None, model_type='basic', plot_title=None):
+                val_loader=None, switch_loader=None, switch_epoch=None,
+                model_type='basic', plot_title=None):
     """
     Description:
         Trains the given model on the training data and optionally switches to a different
@@ -162,6 +162,7 @@ def train_model(model, loader, loss_fn, optimizer,
 
     switched = False
     val_accs = []
+    train_accs = []
     for epoch in range(num_epochs):
         val_acc = None
         if switch_epoch is not None and epoch >= switch_epoch:
@@ -171,32 +172,38 @@ def train_model(model, loader, loss_fn, optimizer,
                     "Curriculum training on basic data complete. Now training curriculum model on complex data...")
             train_acc = train_epoch(
                 model, switch_loader, loss_fn, optimizer, epoch, num_epochs)
-            val_acc = eval_model(model, switch_val_loader,
-                                 model_type=model_type, data_type='validation')
         else:
             train_acc = train_epoch(
                 model, loader, loss_fn, optimizer, epoch, num_epochs)
-            val_acc = eval_model(
-                model, val_loader, model_type=model_type, data_type='validation')
 
-        if verbose:
-            print(f'Epoch {epoch + 1}, Training Accuracy: {train_acc}')
+        val_acc = eval_model(
+            model, val_loader, model_type=model_type, data_type='validation')
 
+        train_accs.append(train_acc)
         val_accs.append(val_acc)
 
         # early exit based on validation accuracy
         if model_plateau(val_accs=val_accs, curr_epoch=epoch, switch_epoch=switch_epoch, patience=20, tol=tol):
-            print("Model training has reached early stopping.")
+            print(
+                f"Model training has reached early stopping at epoch {epoch}.")
             break
 
     if plot_title is not None:
-        plt.plot(range(len(val_accs)), val_accs)
+        plt.plot(range(len(val_accs)), val_accs,
+                 label='Validation Accurracies', color='blue')
+        plt.plot(range(len(train_accs)), train_accs,
+                 label='Training Accuracies', color='orange')
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
         plt.title(plot_title)
+        plt.legend()
         plt.tight_layout()
         plt.show()
-    print(f"{model_type} validation accuracy after training: {val_accs[-1]}")
+
+    if verbose:
+        print(
+            f"{model_type} validation accuracy after training: {val_accs[-1]}")
+
     return model, val_accs[-1]
 
 
