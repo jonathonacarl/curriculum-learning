@@ -127,9 +127,8 @@ def generate_shape(image_size, complex=False):
                                   If False (default), only simple shapes (square, circle, equilateral triangle) are included.
 
     Returns:
-        tuple: A tuple containing:
-            - numpy.ndarray: A grayscale image (numpy array) containing the generated shape.
-            - str: A string representing the type of the generated shape.
+        Tuple[numpy.ndarray, str]: A grayscale image containing the generated shape and a
+                                   string representing the type of the generated shape.
 
     Notes:
         The function randomly selects a shape type, generates the shape within the image using appropriate parameters,
@@ -191,9 +190,9 @@ def generate_shape_dataset(num_examples, image_size, complex=False):
                                   If False (default), only simple shapes (square, circle, equilateral triangle) are included.
 
     Returns:
-        tuple: A tuple containing:
-            - torch.Tensor: A tensor of shape (num_examples, image_size, image_size) containing the generated images.
-            - torch.Tensor: A tensor of shape (num_examples,) containing the corresponding labels (integers) for the images.
+        Tuple[torch.Tensor, torch.Tensor]: 
+        - A tensor of shape (num_examples, image_size, image_size) containing the generated images 
+        - A tensor of shape (num_examples,) containing the corresponding labels (integers) for the images.
 
     Notes:
         The function calls the `generate_shape` function to generate individual images and labels,
@@ -232,7 +231,7 @@ class ShapeDataset(Dataset):
         """
         Initializes the ShapeDataset object.
 
-        Args:
+        Parameters:
             dataset (torch.Tensor): A tensor containing the input data (e.g., images).
             labels (torch.Tensor): A tensor containing the corresponding labels for the input data.
             num_classes (int): The number of classes in the classification task.
@@ -280,7 +279,7 @@ def prepare_data(dataset, labels, batch_size, num_classes, shuffle=False):
         shuffle (bool, optional): If True, the data is shuffled before splitting. Default is False.
 
     Returns:
-        tuple: A tuple containing:
+        Tuple: A tuple containing:
             - torch.utils.data.DataLoader: The data loader for the training set.
             - torch.utils.data.DataLoader: The data loader for the validation set.
             - torch.utils.data.DataLoader: The data loader for the test set.

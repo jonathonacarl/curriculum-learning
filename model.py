@@ -22,7 +22,7 @@ class FeedForward(nn.Module):
         """
         Initializes the FeedForward object.
 
-        Args:
+        Parameters:
             input_size (int): The size of the input vector.
             hidden_size (int): The size of the hidden layers.
             output_size (int): The size of the output vector.
@@ -49,7 +49,29 @@ class FeedForward(nn.Module):
 
 
 def train_epoch(model, loader, loss_fn, optimizer, epoch, num_epochs=256):
+    """
+    Description:
+        Performs one epoch of training for a PyTorch model.
 
+    Parameters:
+        model (nn.Module): The PyTorch model to be trained.
+        loader (DataLoader): The PyTorch DataLoader containing the training data.
+        loss_fn (callable): The loss function to be minimized.
+        optimizer (optim.Optimizer): The PyTorch optimizer for updating model parameters.
+        epoch (int): The current epoch number.
+        num_epochs (int, optional): The total number of epochs for training. Default is 256.
+
+    Returns:
+        float: The accuracy of the model on the training data after one epoch.
+
+    Notes:
+        - This function sets the model to training mode and iterates over the training data.
+        - For each batch, it flattens the input images, computes the model output, calculates the loss,
+        backpropagates the gradients, and updates the model parameters using the optimizer.
+        - It keeps track of the number of correct predictions and the total number of samples to calculate
+        the overall accuracy for the epoch.
+        - The tqdm library is used to display a progress bar during training.
+    """
     model.train()
     total, num_correct = 0, 0
     for images, labels in tqdm(loader, desc=f'Epoch {epoch + 1}/{num_epochs}', leave=False):
