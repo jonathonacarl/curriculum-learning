@@ -8,10 +8,10 @@ from sklearn.model_selection import train_test_split
 # labels for multi-class classification task
 ELLIPSE = 0
 CIRCLE = 0
-RECTANGLE = 2
-SQUARE = 2
 TRIANGLE = 1
 NON_EQ_TRIANGLE = 1
+RECTANGLE = 2
+SQUARE = 2
 
 
 def shape_label(shape_type):
@@ -60,16 +60,17 @@ def generate_eq_triangle(image_size):
         The function generates a random triangle height within a certain range and calculates the coordinates
         of the three vertices based on the triangle height and random starting positions.
     """
-
-    triangle_height = np.random.randint(image_size // 4, image_size // 2)
-    x1 = np.random.randint(0, image_size - triangle_height)
-    y1 = np.random.randint(0, image_size - triangle_height)
-    x2 = x1 + triangle_height
-    y2 = y1
-    x3 = x1 + (triangle_height // 2)
-    y3 = y1 + triangle_height
-    pts = np.array([[x1, y1], [x2, y2], [x3, y3]], np.int32)
-    return pts
+    while True:
+        triangle_height = np.random.randint(image_size // 4, image_size // 2)
+        x1 = np.random.randint(0, image_size - triangle_height)
+        y1 = np.random.randint(0, image_size - triangle_height)
+        x2 = x1 + triangle_height
+        y2 = y1
+        x3 = x1 + (triangle_height // 2)
+        y3 = y1 + triangle_height
+        pts = np.array([[x1, y1], [x2, y2], [x3, y3]], np.int32)
+        if (pts >= 0).all() and (pts[:, 0] < image_size).all() and (pts[:, 1] < image_size).all():
+            return pts
 
 
 def generate_non_eq_triangle(image_size):
@@ -88,31 +89,32 @@ def generate_non_eq_triangle(image_size):
         the triangle inequality, and calculates the coordinates of the three vertices based on the side lengths
         and random starting positions.
     """
-
-    side_a = np.random.randint(image_size // 4, image_size // 2)
-    side_b = np.random.randint(image_size // 4, image_size // 2)
-    side_c = np.random.randint(image_size // 4, image_size // 2)
-
-    while not (side_a + side_b > side_c and side_b + side_c > side_a and side_a + side_c > side_b):
+    while True:
         side_a = np.random.randint(image_size // 4, image_size // 2)
         side_b = np.random.randint(image_size // 4, image_size // 2)
         side_c = np.random.randint(image_size // 4, image_size // 2)
 
-    while side_a == side_b or side_b == side_c or side_a == side_c:
-        side_a = np.random.randint(image_size // 4, image_size // 2)
-        side_b = np.random.randint(image_size // 4, image_size // 2)
-        side_c = np.random.randint(image_size // 4, image_size // 2)
+        while not (side_a + side_b > side_c and side_b + side_c > side_a and side_a + side_c > side_b):
+            side_a = np.random.randint(image_size // 4, image_size // 2)
+            side_b = np.random.randint(image_size // 4, image_size // 2)
+            side_c = np.random.randint(image_size // 4, image_size // 2)
 
-    x1 = np.random.randint(0, image_size - side_a - 1)
-    y1 = np.random.randint(0, image_size - side_b - 1)
-    x2 = x1 + side_a
-    y2 = y1
-    x3 = np.random.randint(x1 + side_b, x1 + side_a + side_c)
-    y3 = y1 + side_b
+        while side_a == side_b or side_b == side_c or side_a == side_c:
+            side_a = np.random.randint(image_size // 4, image_size // 2)
+            side_b = np.random.randint(image_size // 4, image_size // 2)
+            side_c = np.random.randint(image_size // 4, image_size // 2)
 
-    pts = np.array([[x1, y1], [x2, y2], [x3, y3]], np.int32)
+        x1 = np.random.randint(0, image_size - max(side_a, side_c) - 1)
+        y1 = np.random.randint(0, image_size - side_b - 1)
+        x2 = x1 + side_a
+        y2 = y1
+        x3 = x1 + side_c
+        y3 = y1 + side_b
 
-    return pts
+        pts = np.array([[x1, y1], [x2, y2], [x3, y3]], np.int32)
+
+        if (pts >= 0).all() and (pts[:, 0] < image_size).all() and (pts[:, 1] < image_size).all():
+            return pts
 
 
 def generate_shape(image_size, complex=False):

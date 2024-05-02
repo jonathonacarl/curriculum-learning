@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 import torch
 from torch import nn, optim
-from torch.nn.functional import tanh, softmax
+from torch.nn.functional import relu, softmax
 from tqdm import tqdm
 
 
@@ -42,8 +43,8 @@ class FeedForward(nn.Module):
         Returns:
             Tensor: The output of the neural network.
         """
-        x = tanh(self.layer1(x))
-        x = tanh(self.layer2(x))
+        x = relu(self.layer1(x))
+        x = relu(self.layer2(x))
         x = softmax(self.layer3(x), dim=-1, dtype=torch.float32)
         return x
 
@@ -94,10 +95,39 @@ def train_epoch(model, loader, loss_fn, optimizer, epoch, num_epochs=256):
     return num_correct / total
 
 
+def model_plateau(val_accs, curr_epoch, switch_epoch, patience=20, tol=0.001):
+    """
+
+    Description:
+        Check if the validation accuracy has plateaued over the last 'patience' epochs.
+
+    Parameters:
+        validation_accuracy(list): List of validation accuracy values for each epoch.
+        tolerance(float): Tolerance level for plateauing(e.g., 0.01 for 1 % tolerance).
+        patience(int): Number of epochs to wait before considering plateauing.
+
+    Returns:
+        bool: True if the validation accuracy has plateaued, False otherwise.
+
+    Notes:
+        Model cannot have plateaued if 
+        - the model has been trained on less than 'patience' epochs
+        - a curriculum model is being trained and curr_epoch has not surpassed switch_epoch
+    """
+
+    if len(val_accs) < patience or (switch_epoch is not None and curr_epoch <= switch_epoch):
+        return False  # Not enough epochs to check plateauing
+
+    last_epochs = val_accs[-patience:]
+    min_acc = min(last_epochs)
+    max_acc = max(last_epochs)
+    return abs(max_acc - min_acc) <= tol
+
+
 def train_model(model, loader, loss_fn, optimizer,
-                num_epochs=256, verbose=False, tol=1-(1e-6),
+                num_epochs=256, verbose=False, tol=0.001,
                 val_loader=None, switch_loader=None, switch_val_loader=None,
-                switch_epoch=None, model_type='basic'):
+                switch_epoch=None, model_type='basic', plot_title=None):
     """
     Description:
         Trains the given model on the training data and optionally switches to a different
@@ -116,17 +146,22 @@ def train_model(model, loader, loss_fn, optimizer,
         switch_val_loader (DataLoader, optional): The data loader for the validation data after switching train data loader.
         switch_epoch (int, optional): The epoch number at which to switch to the new data loader.
         model_type (str, optional): The type of the model (default: 'basic').
+        plot_title (str, optional): Title of plot (if not None) for the validation accuracies of each epoch (default: None).
 
     Returns:
-        Tuple[nn.Module, float]: The trained model and the best validation accuracy
+        Tuple[nn.Module, float, list]: 
+        1. The trained model.
+        2. The best validation accuracy.
+        3. The list of validation accuracies at each epoch
 
     Notes:
         This function can be used for curriculum training, where the model is first trained
         on a simpler dataset and then switched to a more complex dataset after a certain
         number of epochs.
     """
-    best_acc = float('-inf')
+
     switched = False
+    val_accs = []
     for epoch in range(num_epochs):
         val_acc = None
         if switch_epoch is not None and epoch >= switch_epoch:
@@ -147,14 +182,22 @@ def train_model(model, loader, loss_fn, optimizer,
         if verbose:
             print(f'Epoch {epoch + 1}, Training Accuracy: {train_acc}')
 
-        best_acc = val_acc if val_acc > best_acc else best_acc
+        val_accs.append(val_acc)
 
         # early exit based on validation accuracy
-        if best_acc > tol:
+        if model_plateau(val_accs=val_accs, curr_epoch=epoch, switch_epoch=switch_epoch, patience=20, tol=tol):
+            print("Model training has reached early stopping.")
             break
 
-    print(f"Model validation accuracy after training: {best_acc}")
-    return model, best_acc
+    if plot_title is not None:
+        plt.plot(range(len(val_accs)), val_accs)
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title(plot_title)
+        plt.tight_layout()
+        plt.show()
+    print(f"{model_type} validation accuracy after training: {val_accs[-1]}")
+    return model, val_accs[-1]
 
 
 def eval_model(model, loader, model_type='basic', data_type='test', verbose=False):
