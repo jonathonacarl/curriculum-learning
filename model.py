@@ -3,6 +3,7 @@ import torch
 from torch import nn, optim
 from torch.nn.functional import relu, softmax
 from tqdm import tqdm
+from datagen import generate_proportional_data
 
 
 class FeedForward(nn.Module):
@@ -127,7 +128,7 @@ def model_plateau(val_accs, curr_epoch, switch_epoch, patience=20, tol=0.001):
 def train_model(model, loader, loss_fn, optimizer,
                 num_epochs=256, verbose=False, tol=0.001,
                 val_loader=None, switch_loader=None, switch_epoch=None,
-                model_type='basic', plot_title=None):
+                model_type='basic', gradual_switch=False, plot_title=None, plot_filepath='./figures/'):
     """
     Description:
         Trains the given model on the training data and optionally switches to a different
@@ -146,6 +147,7 @@ def train_model(model, loader, loss_fn, optimizer,
         switch_val_loader (DataLoader, optional): The data loader for the validation data after switching train data loader.
         switch_epoch (int, optional): The epoch number at which to switch to the new data loader.
         model_type (str, optional): The type of the model (default: 'basic').
+        gradual_switch(bool, optional): Whether to gradually switch training data for curriculum training (default: False).
         plot_title (str, optional): Title of plot (if not None) for the validation accuracies of each epoch (default: None).
 
     Returns:
@@ -160,7 +162,7 @@ def train_model(model, loader, loss_fn, optimizer,
         number of epochs.
     """
 
-    switched = False
+    switched, gs = False, False
     val_accs = []
     train_accs = []
     for epoch in range(num_epochs):
@@ -170,8 +172,31 @@ def train_model(model, loader, loss_fn, optimizer,
                 switched = True
                 print(
                     "Curriculum training on basic data complete. Now training curriculum model on complex data...")
-            train_acc = train_epoch(
-                model, switch_loader, loss_fn, optimizer, epoch, num_epochs)
+
+            # used for curriculum experiments
+            if gradual_switch:
+
+                # incremement proportion of combined data by 2% at each epoch (50 epochs to use 100% of switch loader data)
+                curr_p = (epoch-switch_epoch+1)/50
+
+                # ensure we don't introduce more training data with a proportion higher than 1
+                if curr_p < 1:
+                    gradual_loader = generate_proportional_data(
+                        loader_basic=loader, loader_combined=switch_loader, curr_p=curr_p)
+                    train_acc = train_epoch(
+                        model, gradual_loader, loss_fn, optimizer, epoch, num_epochs)
+                else:
+                    if not gs:
+                        gs = True
+                        print(
+                            "Gradual switching phase complete. Now training completely on switch loader data...")
+                    train_acc = train_epoch(
+                        model, switch_loader, loss_fn, optimizer, epoch, num_epochs)
+
+            else:
+                train_acc = train_epoch(
+                    model, switch_loader, loss_fn, optimizer, epoch, num_epochs)
+
         else:
             train_acc = train_epoch(
                 model, loader, loss_fn, optimizer, epoch, num_epochs)
@@ -189,6 +214,8 @@ def train_model(model, loader, loss_fn, optimizer,
             break
 
     if plot_title is not None:
+        filepath = plot_filepath + f'{model_type}/' + \
+            plot_title.lower().replace(' ', '_') + '.png'
         plt.plot(range(len(val_accs)), val_accs,
                  label='Validation Accuracies', color='blue')
         plt.plot(range(len(train_accs)), train_accs,
@@ -198,6 +225,7 @@ def train_model(model, loader, loss_fn, optimizer,
         plt.title(plot_title)
         plt.legend()
         plt.tight_layout()
+        plt.savefig(filepath)
         plt.show()
 
     if verbose:
