@@ -37,7 +37,7 @@ def curriculum_experiment(input_size, hidden_size, learning_rate,
 
         if save_model:
             torch.save(model_curriculum.state_dict(
-            ), f'models/model_curriculum_{switch_loader_name}_{gs}_{switch_epoch}.pth')
+            ), f'models/curriculum/model_curriculum_{switch_loader_name}_{gs}_{switch_epoch}.pth')
 
         currciulum_accs.append(acc)
 
