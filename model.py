@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import torch
-from torch import nn, optim
+import math
+from torch import tensor, nn, optim
 from torch.nn.functional import relu, softmax
+from collections import Counter
 from tqdm import tqdm
 from datagen import generate_proportional_data
 
