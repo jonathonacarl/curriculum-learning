@@ -4,7 +4,7 @@ A Deep Learning (CSCI 381) final project by Jon Carl and Nate Lentz on Curriculu
 
 ## Files to view:
 
-* `curriculum-learning.ipynb`: **This is the main file to review**. The jupyter notebook containing our review of the Curriculum Learning paper by Bengio et al. and the curriculum learning experiments. The notebook imports methods developed in the three `.py` files mentioned below.
+* `curriculum-learning.ipynb`: **This is the main file to review**. The jupyter notebook containing our review of the [Curriculum Learning](https://dl.acm.org/doi/pdf/10.1145/1553374.1553380) paper by Bengio et al. and the curriculum learning experiments. The notebook imports methods developed in the three `.py` files mentioned below.
 
 * `model.py`: Contains
   - The FeedForward neural network used for curriculum learning.
